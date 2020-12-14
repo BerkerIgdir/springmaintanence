@@ -1,16 +1,15 @@
 package com.maintanence.client.web;
 
-import com.maintanence.client.domain.Malfunction;
+import com.maintanence.client.config.JmsConfig;
+import message.broker.pack.domain.JmsMessageClass;
+import message.broker.pack.domain.Malfunction;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.config.FixedRateTask;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.Random;
 import java.util.UUID;
@@ -18,13 +17,14 @@ import java.util.UUID;
 @Component
 @Slf4j
 @EnableAsync
+@RequiredArgsConstructor
 public class MalfunctionProducer {
-
-    private WebClient webClient = WebClient.create("http://localhost:8088/api/v1");
 
     private String[] malfunctionTypes = {"MECHANICAL","ELECTRICAL"};
 
     private Random rand = new Random();
+
+    private final JmsTemplate jmsTemplate;
 
     @Scheduled(fixedRate = 1000)
     @Async
@@ -32,20 +32,19 @@ public class MalfunctionProducer {
 
     log.info("Request is being sent");
 
-      Mono<Malfunction> malfunctionMono =  Mono.just(Malfunction.builder()
+      Malfunction malfunctionMono =  Malfunction.builder()
               .machineId(UUID.randomUUID())
               .description("RANDOM GENERATED")
               .malfunctionType(malfunctionTypes[rand.nextInt(2)])
-              .build());
+              .build();
 
-       Flux<Malfunction> malfunctionFlux = webClient.post().uri("/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(malfunctionMono,Malfunction.class)
-                .retrieve()
-                .bodyToFlux(Malfunction.class)
-                .log("Sent");
+        JmsMessageClass message = JmsMessageClass.builder()
+                .malfunction(malfunctionMono)
+                .message(" An inter-services message")
+                .build();
 
-       malfunctionFlux.subscribe(malfunction -> malfunction.getDescription());
+        jmsTemplate.convertAndSend(JmsConfig.MY_QUEUE,message);
+
     }
 
 

@@ -1,4 +1,4 @@
-package com.maintanence.client.domain;
+package message.broker.pack.domain;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;

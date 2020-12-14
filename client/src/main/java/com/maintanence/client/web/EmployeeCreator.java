@@ -1,7 +1,7 @@
 //package com.maintanence.client.web;
 //
-//import com.maintanence.client.domain.Employee;
-//import com.maintanence.client.domain.Malfunction;
+//import message.broker.pack.domain.Employee;
+//import message.broker.pack.domain.Malfunction;
 //import lombok.extern.slf4j.Slf4j;
 //import org.springframework.http.MediaType;
 //import org.springframework.scheduling.annotation.Async;
